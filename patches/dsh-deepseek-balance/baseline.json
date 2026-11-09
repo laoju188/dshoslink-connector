@@ -1,0 +1,8 @@
+{
+  "upstreamCommit": "b150a551b8d465e31e418e1b2eaf5e79bbb7d28e",
+  "upstreamVersion": "0.1.1-rc.2",
+  "sourceIndexSha256": "976d656172a3910552c9bac56a24e34ed9f677618ac6b8a0911bb422335786d6",
+  "publishedIndexSha256": "eed9492246cc6451f060de211768d3128388046478deae7f1959de7cde56ea82",
+  "publishedManifestSha256": "4d919cec96dd511db44bfc9eee26bdba19dfaaf9eb2ef5cd2788e6d385be1cd3",
+  "publishedInvariantSha256": "e87b8b6e44e2c08b6cbd65784d56e36a4e7cd29510720c2149b6e5e2d27d2320"
+}

@@ -1,0 +1,7 @@
+{
+  "upstreamVersion": "0.2.1-rc.2",
+  "providerVersion": "0.2.1-rc.2-dshoslink.1",
+  "publishedIndexSha256": "eba35025ed1eedda89c51f2da46a3a968f7be1d59719f2ceeadfc4518dff37d6",
+  "publishedManifestSha256": "96b1b628317603b3d287683bf8abec84a17c407d5e69e2177c48bebb4a750fb4",
+  "source": "Official signed desktop 0.2.1-rc.2; R211 DESKTOP_UPGRADE.json and SDK_021_FILES.json"
+}

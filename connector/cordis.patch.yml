@@ -1,0 +1,3 @@
+- insert:
+    - id: dshos-link-connector
+      name: '@dshos-link/connector'

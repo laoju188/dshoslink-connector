@@ -1,0 +1,9 @@
+* text=auto eol=lf
+*.tgz -text
+*.gz -text
+*.zip -text
+*.png -text
+*.jpg -text
+*.jpeg -text
+*.webp -text
+patches/dsh-deepseek-balance/** -text

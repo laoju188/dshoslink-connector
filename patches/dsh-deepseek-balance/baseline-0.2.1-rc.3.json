@@ -1,0 +1,7 @@
+{
+  "upstreamVersion": "0.2.1-rc.3",
+  "providerVersion": "0.2.1-rc.3-dshoslink.1",
+  "publishedIndexSha256": "21fedb71f8d9aafea73b35ee13bc73737a8271d7ffa261697d4208e8563196cb",
+  "publishedManifestSha256": "c098926a0149812eba7f39e65c68dd5d4d46c41827366ba3ec4da6be9f7ffb2e",
+  "source": "Official signed desktop 0.2.1-rc.3, installer SHA256 1e3876baaa20c3f26371dba7b6873bb70c3ef9b91403f6d3f87d2b27d4fd1e3a; extracted SDK checked 2026-10-25"
+}

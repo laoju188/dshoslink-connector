@@ -1,0 +1,3 @@
+allowBuilds:
+  # Required only for esbuild's platform-specific executable.
+  esbuild: true
