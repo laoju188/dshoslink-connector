@@ -641,13 +641,16 @@ export class WindowsPairingPortController implements PairingOverlayController, P
     }
     if (!this.accessPaused) return this.currentStatus
     const expected = this.accessSwitch.read()
-    if (!expected || !this.currentHost) throw Error('remote_access_identity_unavailable')
+    if (!expected) throw Error('remote_access_identity_unavailable')
     // Background discovery must not clear a user pause. The explicit, serialized
     // resume may rediscover addresses while the durable deny remains in place.
     const resumeHosts = this.options.automaticHosts ? await this.discoverHosts() : this.currentHosts
     if (this.disposed) throw Error('remote_access_unavailable')
     if (this.options.automaticHosts && !resumeHosts?.length) throw Error('remote_access_network_unavailable')
     const resumeHost = resumeHosts?.[0] ?? this.currentHost
+    // An offline restart has no cached host. Resolve an automatic address
+    // before requiring it, without clearing the durable pause or identity guard.
+    if (!resumeHost) throw Error('remote_access_identity_unavailable')
     const identity = await loadOrCreateWindowsPairingIdentity({ rootDirectory: this.options.rootDirectory,
       host: resumeHost, allowCreate: false, protector: this.runtimeDependencies.protector })
     try {

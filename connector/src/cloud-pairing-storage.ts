@@ -2,6 +2,7 @@ import { lstat, open, rename, unlink } from 'node:fs/promises'
 import { dirname } from 'node:path'
 import { createHash } from 'node:crypto'
 import { registrationPath, type RegistrationProtector, type RegistrationGuard } from './dsh-registration-storage.js'
+import { markStorageFailure, trackStorageOperation } from './registration-operation.js'
 
 interface ProtectedRecord<T> { contract: string; sequence: number; previous: string | null; value: T }
 const hash = (text: string): string => createHash('sha256').update(text).digest('base64url')
@@ -31,7 +32,7 @@ export class CloudPairingFile<T> {
     } }
   }
   private async decode(cipher: Buffer): Promise<{ text: string; record: ProtectedRecord<T> }> {
-    const plain = await this.protector.unprotect(cipher)
+    const plain = await trackStorageOperation('decrypt_file', () => this.protector.unprotect(cipher))
     try {
       if (plain.length < 1 || plain.length > 24_000) throw Error('cloud_pairing_file_capacity')
       const text = new TextDecoder('utf-8', { fatal: true }).decode(plain), record = JSON.parse(text) as ProtectedRecord<T>
@@ -40,12 +41,13 @@ export class CloudPairingFile<T> {
         !(record.previous === null || typeof record.previous === 'string' && /^[A-Za-z0-9_-]{43}$/.test(record.previous)) ||
         !this.valid(record.value)) throw Error('cloud_pairing_file_invalid')
       return { text, record }
-    } finally { plain.fill(0) }
+    } catch (error) { throw markStorageFailure(error, 'read_file') }
+    finally { plain.fill(0) }
   }
   private async state(guard: RegistrationGuard): Promise<{ text: string; record: ProtectedRecord<T> } | null> {
-    guard.assertHeld(); const oldBytes = await this.bytes(this.path); guard.assertHeld()
+    guard.assertHeld(); const oldBytes = await trackStorageOperation('read_file', () => this.bytes(this.path)); guard.assertHeld()
     const old = oldBytes ? await this.decode(oldBytes) : null; guard.assertHeld()
-    const pendingBytes = await this.bytes(this.path + '.tmp'); guard.assertHeld()
+    const pendingBytes = await trackStorageOperation('read_file', () => this.bytes(this.path + '.tmp')); guard.assertHeld()
     if (!pendingBytes) return old
     const pending = await this.decode(pendingBytes); guard.assertHeld()
     if (pending.record.sequence !== (old?.record.sequence ?? 0) + 1 || pending.record.previous !== (old ? hash(old.text) : null) ||

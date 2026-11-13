@@ -12,7 +12,7 @@ export const PROVIDER_VERSION = '0.1.1-rc.2-dshoslink.1'
 export async function buildProvider(upstreamPackage, output) {
   const manifestBytes = await readFile(join(upstreamPackage, 'package.json'))
   const manifest = JSON.parse(manifestBytes.toString('utf8'))
-  const splitProvider = ['0.1.7-rc.2', '0.2.0-rc.1', '0.2.0-rc.2', '0.2.1-rc.2', '0.2.1-rc.3', '0.2.1-rc.5', '0.2.2-rc.1'].includes(manifest.version)
+  const splitProvider = ['0.1.7-rc.2', '0.2.0-rc.1', '0.2.0-rc.2', '0.2.1-rc.2', '0.2.1-rc.3', '0.2.1-rc.5', '0.2.2-rc.1', '0.2.2-rc.2'].includes(manifest.version)
   const baselineName = splitProvider ? `baseline-${manifest.version}.json` : manifest.version === '0.1.7-alpha.2' ? 'baseline-0.1.7.json'
     : manifest.version === '0.1.6-alpha.1' ? 'baseline-0.1.6.json'
     : manifest.version === '0.1.5-rc.2' ? 'baseline-0.1.5.json' : 'baseline.json'

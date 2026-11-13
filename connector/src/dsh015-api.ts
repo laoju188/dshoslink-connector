@@ -346,7 +346,7 @@ export class Dsh015Api {
   private async startCarrier(): Promise<void> {
     const gateway = this.service('typertGateway')
     if (!record(gateway.wireStream) || typeof gateway.wireStream.open !== 'function') throw new Error('DSH event carrier unavailable')
-    const peerCarrier = ['0.2.1-rc.2', '0.2.1-rc.3', '0.2.1-rc.5', '0.2.2-rc.1'].includes(this.runtimeDshVersion)
+    const peerCarrier = ['0.2.1-rc.2', '0.2.1-rc.3', '0.2.1-rc.5', '0.2.2-rc.1', '0.2.2-rc.2'].includes(this.runtimeDshVersion)
     if (peerCarrier) {
       // The authenticated phone routes remain the admission boundary. This
       // dedicated in-process Peer belongs only to this bridge, never a browser

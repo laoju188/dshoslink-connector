@@ -17,9 +17,11 @@ import type { CloudRelayKey, CloudRelayPacket } from './cloud-pairing-relay.js'
 import { decryptCloudRelayPacket } from './cloud-pairing-relay-key.js'
 import type { RelayRootKeyStore } from './relay-root-key-store.js'
 import type { RelayConnectorCredentialStore } from './relay-connector-credential.js'
+import { failedStorageOperation } from './registration-operation.js'
 
 export interface CloudDesktopRuntimeOptions extends CloudDesktopVaultOptions {
   name: string
+  storageDiagnostics?: true
   linkObserver?: () => LinkObserver | undefined
   now?: () => number
   monotonic?: () => number
@@ -101,7 +103,10 @@ export class CloudDesktopRuntime {
       try{const previous=await this.vault.readDiagnostic(this.record);this.check();if(previous)this.progress.restore(previous.body)}
       catch{this.check()} // Optional evidence is not the pairing identity.
       this.observe('identity_read','completed')}
-    catch(error){this.observe('identity_read','failed',error);throw error}
+    catch(error){
+      this.observe('identity_read','failed',error,this.options.storageDiagnostics?failedStorageOperation(error):undefined)
+      throw error
+    }
     const record=this.record
     const journal=record.journal
     if (journal?.attemptId && ['authorized','expired'].includes(String(journal.last?.state))) {

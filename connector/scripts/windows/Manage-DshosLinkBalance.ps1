@@ -2,7 +2,7 @@
 $BalancePackageName = '@deepseek-ai/dsh-llm-deepseek'
 $BalancePackageVersion = '0.1.1-rc.2-dshoslink.1'
 $OfficialBalancePackageVersion = '0.1.1-rc.2'
-$ManagedBalancePackageVersions = @('0.1.1-rc.2-dshoslink.1', '0.1.5-rc.2-dshoslink.1', '0.1.6-alpha.1-dshoslink.1', '0.1.7-alpha.2-dshoslink.1', '0.1.7-rc.2-dshoslink.1', '0.2.0-rc.1-dshoslink.1', '0.2.0-rc.2-dshoslink.1', '0.2.1-rc.2-dshoslink.1', '0.2.1-rc.3-dshoslink.1', '0.2.1-rc.5-dshoslink.1', '0.2.2-rc.1-dshoslink.1')
+$ManagedBalancePackageVersions = @('0.1.1-rc.2-dshoslink.1', '0.1.5-rc.2-dshoslink.1', '0.1.6-alpha.1-dshoslink.1', '0.1.7-alpha.2-dshoslink.1', '0.1.7-rc.2-dshoslink.1', '0.2.0-rc.1-dshoslink.1', '0.2.0-rc.2-dshoslink.1', '0.2.1-rc.2-dshoslink.1', '0.2.1-rc.3-dshoslink.1', '0.2.1-rc.5-dshoslink.1', '0.2.2-rc.1-dshoslink.1', '0.2.2-rc.2-dshoslink.1')
 $BalancePayloadName = 'dshos-link-deepseek-provider.tgz'
 $BalanceHelperDirectory = $PSScriptRoot
 
@@ -72,7 +72,13 @@ function Set-DshosBalanceCompatibility {
       $script:BalancePackageVersion = '0.2.2-rc.1-dshoslink.1'
       $script:BalancePayloadName = 'dshos-link-deepseek-provider-022rc1.tgz'
     }
-    default { throw "当前 DSH 为 $DshVersion；此版本尚未适配。最新支持的 DSH 为 0.2.2-rc.1。" }
+    '0.2.2-rc.2' {
+      $script:SplitBalanceAuthVersion = '0.2.2-rc.2'
+      $script:OfficialBalancePackageVersion = '0.2.2-rc.2'
+      $script:BalancePackageVersion = '0.2.2-rc.2-dshoslink.1'
+      $script:BalancePayloadName = 'dshos-link-deepseek-provider-022rc2.tgz'
+    }
+    default { throw "当前 DSH 为 $DshVersion；此版本尚未适配。最新支持的 DSH 为 0.2.2-rc.2。" }
   }
 }
 

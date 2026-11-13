@@ -1,6 +1,6 @@
 import { createHash, randomBytes, randomUUID } from 'node:crypto'
 import type { Context } from '@deepseek-ai/cordis'
-import { SessionMessageQueue, QueueNativeNotEntered, type QueueClaim, type QueueReceipt, type QueueOperationIdentity, type QueueItem } from './session-message-queue.js'
+import { SessionMessageQueue, QueueNativeNotEntered, QueueAuthorizationRequired, type QueueClaim, type QueueReceipt, type QueueOperationIdentity, type QueueItem } from './session-message-queue.js'
 
 import { dshQueueHistoryReceipt, type DshQueueExpectedPart } from './dsh-message-queue-history.js'
 import { prepareSessionImage } from './session-image-prepare.js'
@@ -48,7 +48,10 @@ export function createDshQueuePort(ctx: Context, sessionId: string): DshQueuePor
       if (session.header.origin === 'subagent') throw Error('dsh_queue_subagent_owned')
       if (agent && session.header.parentSession !== undefined) {
         const parent = call(agents, 'get', session.header.parentSession)
-        if (parent && call(agents, 'isOwnedBy', agent.id, parent)) throw Error('dsh_queue_subagent_owned')
+        // Older hosts tracked live ownership separately. rc.2 moved child
+        // ownership to the durable origin checked above; forks also have a parent.
+        if (parent && object(agents) && typeof agents.isOwnedBy === 'function'
+          && call(agents, 'isOwnedBy', agent.id, parent)) throw Error('dsh_queue_subagent_owned')
       }
     }
     return agent
@@ -260,13 +263,20 @@ export class DshMessageQueueDriver {
         if (!p.entered) {
           if (!acquired) this.awaitIdle(p.agent)
           if (this.pending === p) this.pending = null
+          if (error instanceof QueueAuthorizationRequired) throw error
           throw new QueueNativeNotEntered()
         }
         if (this.pending === p) this.pending = null
         throw error
       }
     }, async claim => {
-      authority = await this.authorize(); authority(); this.check()
+      let checkAuthorization: () => void
+      try { checkAuthorization = await this.authorize() }
+      catch { throw new QueueAuthorizationRequired() }
+      authority = () => {
+        try { checkAuthorization() } catch { throw new QueueAuthorizationRequired() }
+      }
+      authority(); this.check()
       const body: unknown = JSON.parse(claim.body)
       if(JSON.stringify(body)!==claim.body)throw Error('dsh_queue_body_invalid')
       if(object(body)&&Object.keys(body).join(',')==='text'){

@@ -32,6 +32,7 @@ export function registrationPrivateKey(seed: unknown, expected: unknown): KeyObj
   } finally { bytes.fill(0) }
 }
 export interface RegistrationTrust {
+  storageDiagnostics?: true
   readonly keyId: string; readonly publicKey: KeyObject
   /** Local metadata from the fresh first-party HTTPS response, never a wire field. */
   readonly pairingClockOffsetMs?: number

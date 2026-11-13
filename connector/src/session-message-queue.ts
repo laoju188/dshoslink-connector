@@ -38,6 +38,11 @@ export interface QueueReceipt {
 export class QueueNativeNotEntered extends Error {
   constructor() { super('queue_native_not_entered') }
 }
+// A lost execution grant needs an explicit authenticated continuation, unlike
+// ordinary host contention which may become writable at the next idle event.
+export class QueueAuthorizationRequired extends QueueNativeNotEntered {
+  constructor() { super(); this.message = 'queue_auth_required' }
+}
 export interface QueueClaim {
   id: string
   body: string
@@ -385,12 +390,17 @@ export class SessionMessageQueue {
     }
     // Read-only AUTH refresh/preparation completes before the last synchronous guard.
     // Failure here proves native entry was never invoked; retain the input.
-    try { await prepare(Object.freeze({ ...claim })); assertCurrent() } catch {
+    try { await prepare(Object.freeze({ ...claim })); assertCurrent() } catch (error) {
       // No native entry was invoked: this precise claim may safely return to waiting.
       return this.mutate((next, now) => {
         const item = next.items.find(v => v.id === claim.id)
         if (!item || item.state !== 'dispatching' || item.dispatchId !== dispatchId) throw Error('queue_dispatch_changed')
-        item.state = 'waiting'; item.dispatchId = null; item.updatedAt = now; return true
+        item.state = 'waiting'; item.dispatchId = null; item.updatedAt = now
+        if (error instanceof QueueAuthorizationRequired) {
+          this.pauseGate = true; this.barrier++
+          if (next.paused === 'none') next.paused = 'recovery'
+        }
+        return true
       })
     }
     let receipt: QueueReceipt
@@ -399,7 +409,12 @@ export class SessionMessageQueue {
       if (error instanceof QueueNativeNotEntered) return this.mutate((next, now) => {
         const item = next.items.find(v => v.id === claim.id)
         if (!item || item.state !== 'dispatching' || item.dispatchId !== dispatchId) throw Error('queue_dispatch_changed')
-        item.state = 'waiting'; item.dispatchId = null; item.updatedAt = now; return true
+        item.state = 'waiting'; item.dispatchId = null; item.updatedAt = now
+        if (error instanceof QueueAuthorizationRequired) {
+          this.pauseGate = true; this.barrier++
+          if (next.paused === 'none') next.paused = 'recovery'
+        }
+        return true
       })
       receipt = { state: 'unknown', hostRef: null }
     }

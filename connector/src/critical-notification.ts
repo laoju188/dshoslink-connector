@@ -42,7 +42,8 @@ interface StoredCriticalNotificationEvent extends CriticalNotificationEvent {
 }
 
 export interface CriticalNotificationSource {
-  completions?(ids: readonly string[], readIds?: readonly string[]): Promise<readonly CompletionProof[]>
+  completions?(ids: readonly string[], readIds?: readonly string[], signal?: AbortSignal,
+    authorized?: () => boolean): Promise<readonly CompletionProof[]>
   cursor(): string | null
   wait(
     afterEventId: string | null,
@@ -216,12 +217,16 @@ export class CriticalNotificationHub implements CriticalNotificationSource {
     private readonly owner: () => string = () => "null",
   ) {}
 
-  async completions(ids: readonly string[], readIds: readonly string[] = []): Promise<readonly CompletionProof[]> {
+  async completions(ids: readonly string[], readIds: readonly string[] = [], signal?: AbortSignal,
+    authorized: () => boolean = () => true): Promise<readonly CompletionProof[]> {
     const owner = this.owner(); await this.completionTail
-    if (owner !== this.owner()) throw Error("completion_owner_changed")
-    await this.journal?.markRead(owner, readIds)
-    const result = await this.journal?.read(owner, ids) ?? []
-    if (owner !== this.owner()) throw Error("completion_owner_changed")
+    const check = () => {
+      if (signal?.aborted) throw Error('completion_cancelled')
+      if (owner !== this.owner() || !authorized()) throw Error('completion_owner_changed')
+    }
+    check()
+    const result = await this.journal?.resolve(owner, ids, readIds, check, signal) ?? []
+    check()
     return result
   }
   async pending(): Promise<readonly CriticalNotificationEvent[]> {
@@ -430,7 +435,8 @@ export function createCriticalNotificationRequestHandler(
     if (parsed.type === 'completions') {
       if (!source.completions) return emptyResponse(503)
       try {
-        const events = await source.completions(parsed.ids, parsed.readIds)
+        const events = await source.completions(parsed.ids, parsed.readIds, request.signal,
+          () => authorizer.authorize(request.authorization, request.connectionGeneration))
         if (!authorizer.authorize(request.authorization, request.connectionGeneration) || request.signal?.aborted) return emptyResponse(401)
         const body = JSON.stringify({ type: 'completion_events', protocolVersion: 2, events })
         if (Buffer.byteLength(body) > MAX_RESPONSE_BYTES) return emptyResponse(503)

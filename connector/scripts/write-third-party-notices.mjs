@@ -74,8 +74,8 @@ ${rows.map(row => `| \`${row.id}\` | ${row.license} |`).join('\n')}
 ## Integrated DSH provider extension
 
 The package includes project-maintained derivatives of
-\`@deepseek-ai/dsh-llm-deepseek@0.1.1-rc.2\`, \`0.1.5-rc.2\`, \`0.1.6-alpha.1\`, \`0.1.7-alpha.2\`, \`0.1.7-rc.2\`, \`0.2.0-rc.1\`, \`0.2.0-rc.2\` \`0.2.1-rc.2\` \`0.2.1-rc.3\`, \`0.2.1-rc.5\` and \`0.2.2-rc.1\`, with versions
-\`0.1.1-rc.2-dshoslink.1\`, \`0.1.5-rc.2-dshoslink.1\`, \`0.1.6-alpha.1-dshoslink.1\`, \`0.1.7-alpha.2-dshoslink.1\`, \`0.1.7-rc.2-dshoslink.1\`, \`0.2.0-rc.1-dshoslink.1\`, \`0.2.0-rc.2-dshoslink.1\` \`0.2.1-rc.2-dshoslink.1\` \`0.2.1-rc.3-dshoslink.1\`, \`0.2.1-rc.5-dshoslink.1\` and \`0.2.2-rc.1-dshoslink.1\`. Only the component
+\`@deepseek-ai/dsh-llm-deepseek@0.1.1-rc.2\`, \`0.1.5-rc.2\`, \`0.1.6-alpha.1\`, \`0.1.7-alpha.2\`, \`0.1.7-rc.2\`, \`0.2.0-rc.1\`, \`0.2.0-rc.2\` \`0.2.1-rc.2\` \`0.2.1-rc.3\`, \`0.2.1-rc.5\`, \`0.2.2-rc.1\` and \`0.2.2-rc.2\`, with versions
+\`0.1.1-rc.2-dshoslink.1\`, \`0.1.5-rc.2-dshoslink.1\`, \`0.1.6-alpha.1-dshoslink.1\`, \`0.1.7-alpha.2-dshoslink.1\`, \`0.1.7-rc.2-dshoslink.1\`, \`0.2.0-rc.1-dshoslink.1\`, \`0.2.0-rc.2-dshoslink.1\` \`0.2.1-rc.2-dshoslink.1\` \`0.2.1-rc.3-dshoslink.1\`, \`0.2.1-rc.5-dshoslink.1\`, \`0.2.2-rc.1-dshoslink.1\` and \`0.2.2-rc.2-dshoslink.1\`. Only the component
 matching the supported DSH runtime is installed. They add a normalized balance
 query within DSH and are not official upstream releases. Their LICENSE and dshos-source.json retain
 the upstream license and build provenance. Its externally installed dependencies

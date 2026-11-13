@@ -9,7 +9,9 @@ export const CLOUD_DIAGNOSTIC_STAGES = ['capabilities','login','service_trust','
 export const CLOUD_DIAGNOSTIC_REASONS = ['none','network','timeout','tls','login','rate_limited','storage','storage_busy','identity_conflict',
   'proof','expired','cancelled','service','unavailable','invalid_code','active_attempt_exists','unknown'] as const;
 export const CLOUD_STORAGE_CAUSES = ['busy','lock_lost','record_invalid','unsafe_path','protection_failed','access_denied','disk_full','io_failed','unavailable','unknown'] as const;
-export const CLOUD_OPERATIONS = ['request','verify_response','read_relay','read_relay_key','decrypt_relay','save_relay_root','save_relay_credential','acknowledge'] as const;
+export const CLOUD_STORAGE_OPERATIONS = ['prepare_directory','storage_lock','read_file','decrypt_file'] as const;
+export type CloudStorageOperation = typeof CLOUD_STORAGE_OPERATIONS[number];
+export const CLOUD_OPERATIONS = ['request','verify_response','read_relay','read_relay_key','decrypt_relay','save_relay_root','save_relay_credential','acknowledge',...CLOUD_STORAGE_OPERATIONS] as const;
 export const CLOUD_TRANSPORT_CAUSES = ['dns','connection_refused','connection_reset','network_unreachable','timeout','tls_certificate','tls_protocol','cancelled','unknown'] as const;
 export interface CloudDiagnosticStep { operation?: typeof CLOUD_OPERATIONS[number]; transport?: typeof CLOUD_TRANSPORT_CAUSES[number]; cause?: typeof CLOUD_STORAGE_CAUSES[number]; stage: string; outcome: string; reason: string; elapsedMs: number; attempts: number; }
 export interface CloudDiagnosticBody {
@@ -27,7 +29,8 @@ function step(v:unknown,elapsed:number,details:boolean):v is CloudDiagnosticStep
   const operation=details&&typeof v==='object'&&v!==null&&Object.hasOwn(v,'operation');
   const transport=details&&typeof v==='object'&&v!==null&&Object.hasOwn(v,'transport');
   return cloudFields(v,['stage','outcome','reason','elapsedMs','attempts',...(detailed?['cause']:[]),...(operation?['operation']:[]),...(transport?['transport']:[])])&&
-    (!operation||(['failed','unknown'].includes(v.outcome as string)&&['publish','connect','relay_bootstrap'].includes(v.stage as string)&&CLOUD_OPERATIONS.includes(v.operation as typeof CLOUD_OPERATIONS[number])))&&
+    (!operation||(['failed','unknown'].includes(v.outcome as string)&&CLOUD_OPERATIONS.includes(v.operation as typeof CLOUD_OPERATIONS[number])&&
+      (CLOUD_STORAGE_OPERATIONS.includes(v.operation as CloudStorageOperation)?v.stage==='identity_read':['publish','connect','relay_bootstrap'].includes(v.stage as string))))&&
     (!transport||(['failed','unknown'].includes(v.outcome as string)&&['network','tls','timeout','cancelled'].includes(v.reason as string)&&CLOUD_TRANSPORT_CAUSES.includes(v.transport as typeof CLOUD_TRANSPORT_CAUSES[number])))&&
     (!detailed||(['storage','storage_busy'].includes(v.reason as string)&&CLOUD_STORAGE_CAUSES.includes(v.cause as typeof CLOUD_STORAGE_CAUSES[number])))&&
     CLOUD_DIAGNOSTIC_STAGES.includes(v.stage as typeof CLOUD_DIAGNOSTIC_STAGES[number])&&

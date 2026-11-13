@@ -1,6 +1,7 @@
 import { basename, join } from 'node:path'
 import { lstat, mkdtemp, readdir, rename } from 'node:fs/promises'
 import { CloudPairingFile } from './cloud-pairing-storage.js'
+import { markStorageFailure, trackStorageOperation } from './registration-operation.js'
 import { RegistrationFile, registrationDirectory, registrationLock, registrationPath, registrationProtector,
   type RegistrationGuard, type RegistrationLease, type RegistrationProtector } from './dsh-registration-storage.js'
 import { validComputerRegistry, registrationId, type ComputerRegistry } from './dsh-registration-contract.js'
@@ -66,11 +67,11 @@ export class CloudDesktopVault {
       protect('DSH-REGISTRATION/V2'),validDshRegistrationMaterial,'material')
   }
   private async held<T>(run: (guard: RegistrationGuard) => Promise<T>): Promise<T> {
-    this.options.assertCurrent(); if (this.busy) throw Error('cloud_pairing_storage_busy'); this.busy = true
+    this.options.assertCurrent(); if (this.busy) throw markStorageFailure(Error('cloud_pairing_storage_busy'), 'storage_lock'); this.busy = true
     let lease: RegistrationLease | undefined, result: T | undefined, failure: unknown
     try {
       const prepare = this.options.prepare ?? registrationDirectory
-      await prepare(this.options.registryDirectory); this.options.assertCurrent()
+      await trackStorageOperation('prepare_directory', () => prepare(this.options.registryDirectory)); this.options.assertCurrent()
       // Background retirement checks and foreground enrollment share this native
       // lease. Wait only before acquisition; never replay a write or a request.
       const delays = [50, 100, 200, 400, 800]
@@ -79,17 +80,20 @@ export class CloudDesktopVault {
         try { lease = await (this.options.lock ?? registrationLock)(this.options.registryDirectory); break }
         catch (error) {
           this.options.assertCurrent()
-          if (!(error instanceof Error) || error.message !== 'registration_busy' || attempt === delays.length) throw error
+          if (!(error instanceof Error) || error.message !== 'registration_busy' || attempt === delays.length) throw markStorageFailure(error, 'storage_lock')
           await new Promise<void>(resolve => setTimeout(resolve, delays[attempt]!))
         }
       }
-      const guard = {assertHeld: () => { this.options.assertCurrent(); lease!.assertHeld() }}
-      guard.assertHeld(); await prepare(this.options.directory); guard.assertHeld()
+      const guard = {assertHeld: () => {
+        this.options.assertCurrent()
+        try { lease!.assertHeld() } catch (error) { throw markStorageFailure(error, 'storage_lock') }
+      }}
+      guard.assertHeld(); await trackStorageOperation('prepare_directory', () => prepare(this.options.directory)); guard.assertHeld()
       result = await run(guard); guard.assertHeld()
     } catch (error) { failure = error }
     finally {
       try { await lease?.release() } catch (error) {
-        failure = failure === undefined ? error : new AggregateError([failure,error],
+        failure = failure === undefined ? markStorageFailure(error, 'storage_lock') : new AggregateError([failure,error],
           failure instanceof Error ? failure.message : 'cloud_pairing_cleanup_failed',{cause:failure})
       }
       this.busy = false
@@ -100,7 +104,7 @@ export class CloudDesktopVault {
   private async names(path: string): Promise<string[]> {
     try { const s = await lstat(path); if (!s.isDirectory() || s.isSymbolicLink()) throw Error('cloud_pairing_unsafe_legacy_path');
       return await readdir(path) }
-    catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return []; throw error }
+    catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return []; throw markStorageFailure(error, 'read_file') }
   }
   private async assertRetirementComplete(guard:RegistrationGuard):Promise<void>{
     const saved=await cloudRetirementFile(this.options.directory,this.retirementProtector).read(guard)

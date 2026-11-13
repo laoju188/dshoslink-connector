@@ -27,7 +27,8 @@ export async function loadDshRegistrationTrust(signal: AbortSignal): Promise<Reg
     || typeof v.keyId !== 'string' || !/^[a-z0-9-]{1,32}$/.test(v.keyId) || !id(v.publicKey, 32)) throw Error('registration_trust')
   signal.throwIfAborted()
   return { keyId: v.keyId, publicKey: createPublicKey({ format: 'jwk', key: { kty: 'OKP', crv: 'Ed25519', x: v.publicKey } }),
-    pairingClockOffsetMs: pairingClockOffset(response.headers.get('date'), response.headers.get('age'), started, Date.now()) }
+    pairingClockOffsetMs: pairingClockOffset(response.headers.get('date'), response.headers.get('age'), started, Date.now()),
+    ...(response.headers.get('x-dsh-storage-diagnostics') === '1' ? { storageDiagnostics: true } : {}) }
 }
 interface Authorizer { authorizePairing(authorization?: string, connectionGeneration?: string): PairingAuthorizationBinding | undefined }
 interface Exchange {

@@ -2,6 +2,7 @@ import { AsyncLocalStorage } from 'node:async_hooks'
 import { observeStartupStorageFailure } from './startup-observation.js'
 import { registrationNativeCause } from './registration-native-error.js'
 import type { RegistrationGuard } from './dsh-registration-storage.js'
+import type { CloudStorageOperation } from './cloud-pairing-diagnostic.js'
 
 export type RegistrationStep = 'path' | 'read' | 'decode' | 'decrypt' | 'validate' | 'encrypt' | 'write'
 export type RegistrationRecord = 'material' | 'source' | 'intent' | 'pairing_intent' | 'registry' | 'activation' | 'recovery'
@@ -14,6 +15,22 @@ interface Operation {
   cache: Map<object, { cipher: Buffer; value: unknown }>
 }
 const operations = new AsyncLocalStorage<Operation>()
+const storageFailures = new WeakMap<object, CloudStorageOperation>()
+export function markStorageFailure<T>(error: T, operation: CloudStorageOperation): T {
+  if (error && typeof error === 'object') storageFailures.set(error, operation)
+  return error
+}
+export function failedStorageOperation(error: unknown, depth = 0): CloudStorageOperation | undefined {
+  if (!error || typeof error !== 'object' || depth > 3) return undefined
+  try {
+    const original = error instanceof AggregateError ? error.errors[0] : (error as { cause?: unknown }).cause
+    return storageFailures.get(error) ?? failedStorageOperation(original, depth + 1)
+  } catch { return undefined }
+}
+export async function trackStorageOperation<T>(operation: CloudStorageOperation, action: () => Promise<T>): Promise<T> {
+  try { return await action() }
+  catch (error) { throw markStorageFailure(error, operation) }
+}
 export const registrationOperation = () => operations.getStore()
 export function assertRegistrationOperation(): void {
   const op = operations.getStore()
@@ -45,6 +62,8 @@ export async function registrationStep<T>(record: RegistrationRecord, step: Regi
   try { assertRegistrationOperation(); notify('pending'); value = await action(); assertRegistrationOperation(); notify(cached ? 'cached' : 'ok'); return value }
   catch (error) {
     if(step==='decrypt'&&Buffer.isBuffer(value))value.fill(0)
+    if (step === 'decrypt') markStorageFailure(error, 'decrypt_file')
+    if (step === 'path' || step === 'read' || step === 'decode' || step === 'validate') markStorageFailure(error, 'read_file')
     observeStartupStorageFailure(record,step,error);notify('failed', error);throw error
   }
 }

@@ -587,7 +587,7 @@ export async function registerWindowsPairingRuntime(
     if(!key||typeof offset!=='number'||!Number.isSafeInteger(offset))throw Error('cloud_pairing_service_trust_invalid')
     return {directory:cloudDirectory,registrationDirectory,registryDirectory,
       environment:SERVICE_ENDPOINTS.registrationDirectoryName==='registration-sandbox'?'SANDBOX' as const:'PRODUCTION' as const,
-      trust:{keyId:trust.keyId,publicKey:key},assertCurrent:guard,now:()=>Date.now()+offset}
+      trust:{keyId:trust.keyId,publicKey:key},storageDiagnostics:trust.storageDiagnostics,assertCurrent:guard,now:()=>Date.now()+offset}
   }
   const cloudHost=new CloudPairingHost({supported:cloudPairingSupported,monotonic:()=>performance.now(),
     available:()=>controller.connectorStatus().state==='READY'&&controller.currentRuntime()!==undefined,

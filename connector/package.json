@@ -1,6 +1,6 @@
 {
   "name": "@dshos-link/connector",
-  "version": "0.2.14",
+  "version": "0.2.15",
   "description": "DSHOS Link connector for the official DeepSeek Harness on Windows.",
   "type": "module",
   "bin": {
@@ -67,9 +67,12 @@
   "packageManager": "pnpm@11.7.0",
   "scripts": {
     "build": "tsc -p tsconfig.json && node scripts/build-client.mjs && node scripts/build-image-prepare.mjs && node scripts/build-updater.mjs",
-    "test": "tsc -p tsconfig.json && node scripts/build-client.mjs && node scripts/build-image-prepare.mjs && node scripts/build-updater.mjs && tsc -p tsconfig.test.json && node --test .test/tests/*.test.js tests/connector-upgrade.test.mjs tests/license-notices.test.mjs tests/link-diagnostic-reporter.test.mjs tests/npm-cli.test.mjs ../patches/dsh-deepseek-balance/balance-api.test.mjs",
+    "test": "tsc -p tsconfig.json && node scripts/build-client.mjs && node scripts/build-image-prepare.mjs && node scripts/build-updater.mjs && tsc -p tsconfig.test.json && node --test .test/tests/*.test.js tests/connector-upgrade.test.mjs tests/license-notices.test.mjs tests/link-diagnostic-reporter.test.mjs tests/npm-cli.test.mjs ../patches/dsh-deepseek-balance/balance-api.test.mjs tests/pause-network-resume.test.mjs tests/installer-version.test.mjs",
     "prepack": "node scripts/write-third-party-notices.mjs --check && node scripts/verify-balance-payload.mjs && node scripts/verify-build-output.mjs",
-    "release:windows": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/windows/Build-WindowsRelease.ps1"
+    "release:windows": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/windows/Build-WindowsRelease.ps1",
+    "test:balance-manager": "powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File tests/windows-balance-manager.test.ps1",
+    "test:updater-migration": "node --test tests/connector-upgrade-migration.test.mjs",
+    "test:provider-rc2": "node --test ../patches/dsh-deepseek-balance/provider-rc2-integration.test.mjs"
   },
   "dependencies": {
     "sharp": "0.35.4",
@@ -110,7 +113,8 @@
       "0.2.1-rc.2",
       "0.2.1-rc.3",
       "0.2.1-rc.5",
-      "0.2.2-rc.1"
+      "0.2.2-rc.1",
+      "0.2.2-rc.2"
     ]
   },
   "private": true
