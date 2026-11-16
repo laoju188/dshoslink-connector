@@ -6,7 +6,21 @@ DSHOS Link 是面向 **DeepSeek Harness（DSH）Windows 桌面端**的第三方�
 
 *DeepSeek Harness (DSH) Windows plugin and native HarmonyOS companion app.*
 
-[下载鸿蒙 App](https://dshoslink.cn/open) · [安装或升级插件](#快速开始) · [最近更新](#最近更新) · [版本与兼容性](#版本与兼容性)
+[下载鸿蒙 App](https://dshoslink.cn/open) · [让 AI 帮你安装](#让-ai-小助手帮你安装) · [手动安装或升级](#快速开始) · [最近更新](#最近更新) · [版本与兼容性](#版本与兼容性)
+
+## 让 AI 小助手帮你安装
+
+**一句话，让你的 AI 小助手帮你装好 DSHOS Link。** 将下面这段话复制给 **DeepSeek Harness（DSH）桌面端里的 AI 助手**，让它按你的电脑情况协助安装：
+
+```text
+请帮我在这台 Windows 电脑的 DeepSeek Harness（DSH）桌面端安装 DSHOS Link 插件，让我能用鸿蒙手机继续电脑上的会话。
+请先阅读最新安装说明：https://github.com/laoju188/dshoslink-connector/blob/main/connector/docs/windows-installation.md
+检查本机环境和已有安装，按说明选择安装或升级，配齐升级助手与余额组件，保留原配对、会话和设置。
+如果需要退出 DSH，请先准备好退出后的操作步骤，再提醒我保存任务并自行退出，不要强行关闭当前桌面。
+装好并重新打开 DSH 后，请帮我核对实际安装版本和配套组件，并指导我完成手机配对；已有正常配对就沿用。需要我操作或还无法确认的地方，请直接说明。
+```
+
+AI 助手需要能够读取网页并操作本机；遇到权限确认或需要重开桌面时，按提示配合即可。如果当前助手不能执行安装，也可以使用下方的[手动安装步骤](#快速开始)。
 
 | 胖肥鱼桌面卡片 · 任务完成 | 鸿蒙 App · 新建会话 |
 | :---: | :---: |
