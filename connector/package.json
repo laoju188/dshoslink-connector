@@ -1,6 +1,6 @@
 {
   "name": "@dshos-link/connector",
-  "version": "0.2.15",
+  "version": "0.2.16",
   "description": "DSHOS Link connector for the official DeepSeek Harness on Windows.",
   "type": "module",
   "bin": {
@@ -72,7 +72,8 @@
     "release:windows": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/windows/Build-WindowsRelease.ps1",
     "test:balance-manager": "powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File tests/windows-balance-manager.test.ps1",
     "test:updater-migration": "node --test tests/connector-upgrade-migration.test.mjs",
-    "test:provider-rc2": "node --test ../patches/dsh-deepseek-balance/provider-rc2-integration.test.mjs"
+    "test:provider-rc2": "node --test ../patches/dsh-deepseek-balance/provider-rc2-integration.test.mjs",
+    "test:provider-rc3": "node --test ../patches/dsh-deepseek-balance/provider-rc2-integration.test.mjs"
   },
   "dependencies": {
     "sharp": "0.35.4",
@@ -114,7 +115,8 @@
       "0.2.1-rc.3",
       "0.2.1-rc.5",
       "0.2.2-rc.1",
-      "0.2.2-rc.2"
+      "0.2.2-rc.2",
+      "0.2.2-rc.3"
     ]
   },
   "private": true

@@ -300,7 +300,7 @@ foreach ($withBom in @($false, $true)) {
   Assert-Balance ($saved.description -ceq '中文配置' -and $saved.dependencies.fixture -ceq 'file:D:/插件/fixture') 'UTF-8 metadata or dependency path changed'
 }
 
-foreach ($splitVersion in @('0.1.7-rc.2', '0.2.0-rc.1', '0.2.0-rc.2', '0.2.1-rc.2', '0.2.1-rc.3', '0.2.1-rc.5', '0.2.2-rc.1', '0.2.2-rc.2')) {
+foreach ($splitVersion in @('0.1.7-rc.2', '0.2.0-rc.1', '0.2.0-rc.2', '0.2.1-rc.2', '0.2.1-rc.3', '0.2.1-rc.5', '0.2.2-rc.1', '0.2.2-rc.2', '0.2.2-rc.3')) {
 # rc.2 must install the real API-key entrypoint, and remember whether we added it.
 [IO.File]::WriteAllText((Join-Path $profileRoot 'package.json'), '{"dependencies":{}}')
 [IO.File]::WriteAllText((Join-Path $profileRoot 'pnpm-lock.yaml'), 'synthetic-rc2-lock')
@@ -349,7 +349,7 @@ $invalidState = [pscustomobject]@{schemaVersion=2;profile='web';root=$profileRoo
 Assert-Balance (-not (Test-DshosBalanceSavedState $invalidState 'web' $profileRoot)) 'invalid auxiliary ownership was accepted'
 
 # Advancing a recorded managed provider may update only its matching official auth entry.
-foreach ($upgrade in @(@{from='0.1.7-rc.2';to='0.2.0-rc.1'}, @{from='0.2.0-rc.1';to='0.2.0-rc.2'}, @{from='0.2.0-rc.2';to='0.2.1-rc.2'}, @{from='0.2.1-rc.2';to='0.2.1-rc.3'}, @{from='0.2.1-rc.3';to='0.2.1-rc.2'}, @{from='0.2.1-rc.3';to='0.2.1-rc.5'}, @{from='0.2.1-rc.5';to='0.2.1-rc.3'}, @{from='0.2.1-rc.5';to='0.2.2-rc.1'}, @{from='0.2.2-rc.1';to='0.2.1-rc.5'}, @{from='0.2.2-rc.1';to='0.2.2-rc.2'}, @{from='0.2.2-rc.2';to='0.2.2-rc.1'})) {
+foreach ($upgrade in @(@{from='0.1.7-rc.2';to='0.2.0-rc.1'}, @{from='0.2.0-rc.1';to='0.2.0-rc.2'}, @{from='0.2.0-rc.2';to='0.2.1-rc.2'}, @{from='0.2.1-rc.2';to='0.2.1-rc.3'}, @{from='0.2.1-rc.3';to='0.2.1-rc.2'}, @{from='0.2.1-rc.3';to='0.2.1-rc.5'}, @{from='0.2.1-rc.5';to='0.2.1-rc.3'}, @{from='0.2.1-rc.5';to='0.2.2-rc.1'}, @{from='0.2.2-rc.1';to='0.2.1-rc.5'}, @{from='0.2.2-rc.1';to='0.2.2-rc.2'}, @{from='0.2.2-rc.2';to='0.2.2-rc.1'}, @{from='0.2.2-rc.2';to='0.2.2-rc.3'}, @{from='0.2.2-rc.3';to='0.2.2-rc.2'})) {
 foreach ($authOriginal in @($upgrade.from, '0.1.7-rc.1', 'file:custom')) {
   Set-DshosBalanceCompatibility $upgrade.to
   $script:mode = 'managed'
@@ -374,7 +374,7 @@ foreach ($authOriginal in @($upgrade.from, '0.1.7-rc.1', 'file:custom')) {
 }
 }
 # The actual inspector accepts only the requested official version.
-foreach ($authVersion in @('0.1.7-rc.2','0.2.0-rc.1','0.2.0-rc.2','0.2.1-rc.2','0.2.1-rc.3', '0.2.1-rc.5', '0.2.2-rc.1', '0.2.2-rc.2')) {
+foreach ($authVersion in @('0.1.7-rc.2','0.2.0-rc.1','0.2.0-rc.2','0.2.1-rc.2','0.2.1-rc.3', '0.2.1-rc.5', '0.2.2-rc.1', '0.2.2-rc.2', '0.2.2-rc.3')) {
   [IO.File]::WriteAllText((Join-Path $profileRoot 'package.json'), (@{dependencies=@{$SplitBalanceAuthPackageName=$authVersion}} | ConvertTo-Json))
   Assert-Balance ((& $authInspector $profileRoot $authVersion) -ceq 'official') 'actual inspector rejected matching split auth'
   Assert-Balance ((& $authInspector $profileRoot '0.2.0-rc.3') -ceq 'custom') 'actual inspector accepted a different auth version'

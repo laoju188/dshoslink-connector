@@ -6,7 +6,7 @@ DSHOS Link 是面向 **DeepSeek Harness（DSH）Windows 桌面端**的第三方�
 
 *DeepSeek Harness (DSH) Windows plugin and native HarmonyOS companion app.*
 
-[下载鸿蒙 App](https://dshoslink.cn/open) · [安装或升级插件](#快速开始) · [版本与兼容性](#版本与兼容性)
+[下载鸿蒙 App](https://dshoslink.cn/open) · [安装或升级插件](#快速开始) · [最近更新](#最近更新) · [版本与兼容性](#版本与兼容性)
 
 | 胖肥鱼桌面卡片 · 任务完成 | 鸿蒙 App · 新建会话 |
 | :---: | :---: |
@@ -34,11 +34,52 @@ DSHOS Link 是面向 **DeepSeek Harness（DSH）Windows 桌面端**的第三方�
 
 | 组件 | 当前说明 |
 | --- | --- |
-| Windows 连接器 **0.2.15** | 已发布至 npm。新增对官方 Windows DSH **0.2.2-rc.2** 的适配，包括新版消息队列和余额组件。 |
-| 鸿蒙 App **1.1.0** | 已验证可搭配连接器 0.2.15 使用。 |
-| 鸿蒙 App **1.1.1** | 已提交华为应用市场审核，下载版本以市场页面为准。需要 **API 26 或更高版本**，新增胖肥鱼桌面卡片，改善提醒和已读同步、发送状态、日夜主题弹层和横屏显示。 |
+| Windows 连接器 **0.2.16** | 已发布至 npm，并同步本仓库源码。支持官方 Windows DSH **0.2.2-rc.3**，配套更新余额组件和升级助手。 |
+| 鸿蒙 App **1.1.1** | 当前已获华为审核通过的正式版，也是本次插件兼容基线。原送审同版测试包已验证配对、收发、余额和重开后的原绑定。需要 **API 26 或更高版本**。 |
+| 鸿蒙 App **1.1.2** | 已提交华为审核，尚未确认通过；审核期间可继续使用 **1.1.1 + 连接器 0.2.16**。新版改善旧配对请求卡住后的恢复和重新发码。市场实际可下载版本以页面为准。 |
 
-[连接器变更日志](CHANGELOG.md) · [npm 0.2.15](https://www.npmjs.com/package/@dshos-link/connector/v/0.2.15) · [DSH 桌面端兼容说明](connector/docs/dsh-desktop-compatibility.md)
+[连接器变更日志](CHANGELOG.md) · [npm 0.2.16](https://www.npmjs.com/package/@dshos-link/connector/v/0.2.16) · [DSH 桌面端兼容说明](connector/docs/dsh-desktop-compatibility.md)
+
+## 最近更新
+
+以下按**插件版本**记录更新；手机版进度见上方兼容表。默认展示最近三个版本，较早记录可点击展开。
+
+<!-- 维护规则：新版本放在最前，始终保留最近三个版本展开；其余移入下方 details，并同步 CHANGELOG.md。 -->
+
+### 0.2.16 · 适配新版 DSH
+
+- 支持 **DSH 0.2.2-rc.3**，同步适配会话事件与余额组件。
+- 升级助手更新到 **0.1.5**，支持迁移上一版助手并保留升级记录。
+- 兼容当前正式手机版 **1.1.1**，手机 1.1.2 审核期间可正常使用。
+
+### 0.2.15 · 连接与消息恢复
+
+- 支持 **DSH 0.2.2-rc.2**，适配新版消息队列和余额组件。
+- 改善 DSH 重开、局域网地址变化后的原配对恢复。
+- 保留待发消息和结果未知的提交状态，改进完成提醒、已读回执与升级恢复。
+
+### 0.2.14 · 安装与升级完善
+
+- 支持 **DSH 0.2.2-rc.1**，提供匹配桌面版本的余额组件。
+- 内置升级助手 **0.1.3**，完善插件安装、升级与恢复路径。
+- 隔离升级验证确认配对、会话和设置资料保持。
+
+<details>
+<summary>查看历史更新（0.2.13 及更早版本）</summary>
+
+### 0.2.13
+
+历史正式发行版，内置升级助手 0.1.2。可查看 [npm 0.2.13](https://www.npmjs.com/package/@dshos-link/connector/v/0.2.13) 的版本资料。
+
+### 0.2.12
+
+历史正式发行版，内置升级助手 0.1.2。可查看 [npm 0.2.12](https://www.npmjs.com/package/@dshos-link/connector/v/0.2.12) 的版本资料。
+
+更早版本见 [npm 版本列表](https://www.npmjs.com/package/@dshos-link/connector?activeTab=versions)。历史包用于版本追溯，日常安装请使用最新版。
+
+</details>
+
+[查看完整变更日志](CHANGELOG.md)
 
 ## 快速开始
 
@@ -54,7 +95,7 @@ DSHOS Link 是面向 **DeepSeek Harness（DSH）Windows 桌面端**的第三方�
 
 ### 已安装插件
 
-保存工作并完全退出 DSH，在 PowerShell 运行以下命令，再重新打开 DSH。原配对可继续使用。已升级 DSH 至 **0.2.2-rc.2**、插件仍为 **0.2.14** 的用户，请用这条命令一起更新连接器和余额组件。
+保存工作并完全退出 DSH，在 PowerShell 运行以下命令，再重新打开 DSH。原配对可继续使用。已升级 DSH 至 **0.2.2-rc.3**、插件仍是旧版的用户，请用这条命令一起更新连接器和余额组件。
 
 ```powershell
 npx --yes @dshos-link/connector@latest upgrade

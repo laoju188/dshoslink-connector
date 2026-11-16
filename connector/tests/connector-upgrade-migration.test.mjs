@@ -11,16 +11,20 @@ import { UPGRADE_HELPER_VERSION } from '../dist/connector-upgrade-policy.js';
 const fixturePath = process.env.DSHOS_UPGRADE_HELPER_FROM_0214;
 assert.ok(fixturePath, 'Set DSHOS_UPGRADE_HELPER_FROM_0214 to dist/updater.tgz from the npm 0.2.14 package');
 const fixture = readFileSync(fixturePath);
+const fixture15Path = process.env.DSHOS_UPGRADE_HELPER_FROM_0215;
+assert.ok(fixture15Path, 'Set DSHOS_UPGRADE_HELPER_FROM_0215 to dist/updater.tgz from npm 0.2.15');
+const fixture15 = readFileSync(fixture15Path);
+assert.equal(createHash('sha256').update(fixture15).digest('hex'), 'e911c7bd24f4f1e5173b793c98e356144a92c0c89122ab146f3e43c05696c8e5');
 assert.equal(createHash('sha256').update(fixture).digest('hex'),
   '8d6ff68704e191a968769275bfc1d63a3a7365685cd6a77ca77ff3c5e7b13c19');
 
-function setup(t, active) {
+function setup(t, active, oldVersion = '0.1.3', hostVersion = '0.2.2-rc.2', archive = fixture) {
   const profile = mkdtempSync(join(tmpdir(), 'dshos-helper-migration-'));
   t.after(() => rmSync(profile, { recursive: true, force: true }));
   const installed = join(profile, 'node_modules/@dshos-link/connector-updater');
   const allowed = new Set(['package.json', 'cordis.patch.yml', 'index.js', 'typert.js',
     'client.js', 'LICENSE', 'THIRD_PARTY_NOTICES.md']);
-  const tar = gunzipSync(fixture, { maxOutputLength: 2 * 1024 * 1024 });
+  const tar = gunzipSync(archive, { maxOutputLength: 2 * 1024 * 1024 });
   mkdirSync(installed, { recursive: true });
   for (let offset = 0; offset + 512 <= tar.length && tar[offset];) {
     const header = tar.subarray(offset, offset + 512);
@@ -34,7 +38,7 @@ function setup(t, active) {
   }
   assert.equal(allowed.size, 0);
   const journal = join(profile, '.dshos-link/plugin-updater-v1/operation.json');
-  const bundle = { name: '@dshos-link/connector-updater', version: '0.1.3', enabled: true };
+  const bundle = { name: '@dshos-link/connector-updater', version: oldVersion, enabled: true };
   let locked = false;
   let installs = 0;
   let starts = 0;
@@ -58,7 +62,7 @@ function setup(t, active) {
   };
   if (active) {
     services.dshosUpgrade = {
-      helperVersion: '0.1.3',
+      helperVersion: oldVersion,
       coordinator: { pending: null, io: {
         read: () => existsSync(journal) ? JSON.parse(readFileSync(journal, 'utf8')) : null,
         async exclusive(work) {
@@ -73,7 +77,7 @@ function setup(t, active) {
     bundle.error = 'incompatible-version';
   }
   const upgrade = new ConnectorUpgrade({ get: name => services[name] },
-    { refresh: async () => {}, snapshot: () => ({ status: 'available' }) }, () => '0.2.2-rc.2');
+    { refresh: async () => {}, snapshot: () => ({ status: 'available' }) }, () => hostVersion);
   function save(value) {
     mkdirSync(dirname(journal), { recursive: true });
     writeFileSync(journal, JSON.stringify(value));
@@ -102,5 +106,17 @@ for (const condition of ['edited', 'extra', 'pending']) {
     assert.equal((await f.upgrade.start()).started, false);
     assert.deepEqual(f.counts(), { installs: 0, starts: 0 });
     if (condition === 'pending') assert.equal(JSON.parse(readFileSync(f.journal, 'utf8')).needsRecovery, true);
+  });
+}
+
+for (const active of [false, true]) {
+  test(`rc.3 migrates published 0.1.4 and preserves the journal (${active ? 'active' : 'inactive'})`, async t => {
+    const f = setup(t, active, '0.1.4', '0.2.2-rc.3', fixture15);
+    f.save({ phase: 'succeeded', needsRecovery: false, targetVersion: '0.2.15' });
+    const before = readFileSync(f.journal);
+    assert.equal((await f.upgrade.start()).started, true);
+    assert.deepEqual(f.counts(), { installs: 1, starts: 1 });
+    assert.deepEqual(readFileSync(f.journal), before);
+    assert.equal(existsSync(f.journal + '.lock'), false);
   });
 }

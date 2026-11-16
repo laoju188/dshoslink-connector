@@ -7,10 +7,10 @@ import { pathToFileURL } from 'node:url'
 import { createRequire } from 'node:module'
 import { buildProvider } from './build.mjs'
 
-assert.ok(process.env.DSH_BALANCE_TEST_PACKAGE, 'Set DSH_BALANCE_TEST_PACKAGE to the official DSH 0.2.2-rc.2 provider directory')
+assert.ok(process.env.DSH_BALANCE_TEST_PACKAGE, 'Set DSH_BALANCE_TEST_PACKAGE to the official DSH 0.2.2-rc.2 or 0.2.2-rc.3 provider directory')
 const official = resolve(process.env.DSH_BALANCE_TEST_PACKAGE)
 const version = JSON.parse(await readFile(join(official, 'package.json'), 'utf8')).version
-assert.equal(version, '0.2.2-rc.2')
+assert.ok(['0.2.2-rc.2', '0.2.2-rc.3'].includes(version), 'Expected an exact supported rc.2 or rc.3 provider')
 const upstreamRequire = createRequire(join(official, 'package.json'))
 const { Context } = await import(pathToFileURL(upstreamRequire.resolve('@deepseek-ai/cordis')).href)
 const validationRoot = resolve(process.env.DSH_BALANCE_TEST_OUTPUT ?? tmpdir())
