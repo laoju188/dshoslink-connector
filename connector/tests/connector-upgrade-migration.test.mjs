@@ -120,3 +120,19 @@ for (const active of [false, true]) {
     assert.equal(existsSync(f.journal + '.lock'), false);
   });
 }
+
+const fixture16Path = process.env.DSHOS_UPGRADE_HELPER_FROM_0216;
+test('rc.5 migrates the official 0.1.5 helper and preserves its journal', { skip: !fixture16Path }, async t => {
+  const fixture16 = readFileSync(fixture16Path);
+  assert.equal(createHash('sha256').update(fixture16).digest('hex'),
+    '35e0faefca923cebae958051c54fee1f7b5e0a9fca98626c427164726ae459cb');
+  for (const active of [false, true]) {
+    const f = setup(t, active, '0.1.5', '0.2.2-rc.5', fixture16);
+    f.save({ phase: 'restored', needsRecovery: false, targetVersion: '0.2.16' });
+    const before = readFileSync(f.journal);
+    assert.equal((await f.upgrade.start()).started, true);
+    assert.deepEqual(f.counts(), { installs: 1, starts: 1 });
+    assert.deepEqual(readFileSync(f.journal), before);
+    assert.equal(existsSync(f.journal + '.lock'), false);
+  }
+});

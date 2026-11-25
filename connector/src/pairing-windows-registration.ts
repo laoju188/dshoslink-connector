@@ -17,7 +17,7 @@ import { DesktopForkJournal } from './desktop-sessions.js'
 import { createDiagnosticReadSource } from './diagnostic-http.js'
 import { PairingSupport, PairingSupportRemote } from './pairing-support.js'
 import { createDiagnosticReport } from './diagnostic-report.js'
-import { readRuntimeDshVersion, preparedDesktopLanHosts } from './runtime-version.js'
+import { readRuntimeDshKind, readRuntimeDshVersion, preparedDesktopLanHosts } from './runtime-version.js'
 import { createPairingDiagnostics, PairingDiagnosticsRemote } from './pairing-diagnostics.js'
 import { randomUUID } from 'node:crypto'
 import { existsSync } from 'node:fs'
@@ -377,7 +377,7 @@ function sessionModelSource(ctx: Context): SessionModelSource {
 }
 
 function sessionUsageSource(ctx: Context): SessionUsageSource {
-  const balance = registerSessionBalanceReader(ctx, readRuntimeDshVersion())
+  const balance = registerSessionBalanceReader(ctx, readRuntimeDshVersion(), readRuntimeDshKind())
   return {
     models(request) { return sessionModelSource(ctx).models(request) },
     balance: provider => balance.read(provider),

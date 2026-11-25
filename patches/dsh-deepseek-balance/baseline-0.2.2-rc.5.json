@@ -1,0 +1,7 @@
+{
+  "upstreamVersion": "0.2.2-rc.5",
+  "providerVersion": "0.2.2-rc.5-dshoslink.1",
+  "publishedIndexSha256": "aa4de6cf5136d17534ee7c2c0cc43d9b17b2f1e0c9dc250c2b44a7f694d26258",
+  "publishedManifestSha256": "316baf455c48af42ef42338f0b9b184cbdb339c7554d3a370c1618e134d82f3b",
+  "source": "Official signed Windows desktop 0.2.2-rc.5; installer SHA256 013e28bc8c714749331308386d814108336851914d243aa6bcfd14de1ab30923"
+}

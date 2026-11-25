@@ -45,6 +45,15 @@ export const KNOWN_LEGACY_HELPERS: Readonly<Record<string, readonly Readonly<Rec
     "LICENSE": "fac3a4ef4aad6c839fc10a87af87b9e5ae2cac0a6b969f83dbb7203abc4788e4",
     "THIRD_PARTY_NOTICES.md": "472fd9eb054df88e49ce4f6b6b21bbab5aa200fb70815dd8f33941fda8c467d2"
   }],
+  "0.1.5": [{
+    "package.json": "e252ef59d58230603fcd9ba58a01a65ebf2ea5a3921fa7b58d5243d0dad85d38",
+    "cordis.patch.yml": "651e8bebac518a651547a025f3da5739c5ac641ebb64e5887aa8af1064648c7d",
+    "index.js": "e209f1b88ce70be6f4ddeb5a3a873bc8c115fa2b26454c0277f8b6370166be7a",
+    "typert.js": "4daffc87b22087a2deb01811a93958963b9f6efdd8368f759231c7a45b2afca5",
+    "client.js": "7133e5556a9f396eb0b0df91300ad4847e94d94c2810350be4bb7144166dafe1",
+    "LICENSE": "fac3a4ef4aad6c839fc10a87af87b9e5ae2cac0a6b969f83dbb7203abc4788e4",
+    "THIRD_PARTY_NOTICES.md": "d7d260e63f348bfd637c0fad62973db89bacde25864772a7b951ace1a1178e05"
+  }],
   "0.1.2": [
     helper012, // 0.2.10, 0.2.11 and 0.2.13
     { ...helper012, // 0.2.12

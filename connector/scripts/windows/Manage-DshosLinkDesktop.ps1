@@ -48,7 +48,7 @@ function Install-DshosDesktopConnector {
         Write-Host '安装进程意外退出，原配置已恢复。正在自动重试一次，请稍候。'
         continue
       }
-      $reported = [InvalidOperationException]::new('此次插件安装未完成，已恢复原来的 DSH，可以继续使用。稍后运行同一条安装命令即可重试。', $failure)
+      $reported = [InvalidOperationException]::new('此次插件安装未完成，已恢复安装前的插件依赖和启用配置。如果 DSH 已升级，恢复的连接器和余额组件可能与当前版本不兼容。请保持 DSH 关闭，使用与当前 DSH 桌面版本匹配的完整安装包重试。', $failure)
       foreach ($key in $failure.Data.Keys) { $reported.Data[$key] = $failure.Data[$key] }
       throw $reported
     }

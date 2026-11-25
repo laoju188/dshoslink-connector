@@ -2,15 +2,14 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { mkdtemp, readFile, symlink, writeFile, mkdir } from 'node:fs/promises'
 import { resolve, join } from 'node:path'
-import { tmpdir } from 'node:os'
 import { pathToFileURL } from 'node:url'
 import { createRequire } from 'node:module'
 import { buildProvider } from './build.mjs'
 
-assert.ok(process.env.DSH_BALANCE_TEST_PACKAGE, 'Set DSH_BALANCE_TEST_PACKAGE to the official DSH 0.2.2-rc.2 or 0.2.2-rc.3 provider directory')
+assert.ok(process.env.DSH_BALANCE_TEST_PACKAGE, 'Set DSH_BALANCE_TEST_PACKAGE to the official DSH 0.2.2-rc.2, 0.2.2-rc.3 or 0.2.2-rc.5 provider directory')
 const official = resolve(process.env.DSH_BALANCE_TEST_PACKAGE)
 const version = JSON.parse(await readFile(join(official, 'package.json'), 'utf8')).version
-assert.ok(['0.2.2-rc.2', '0.2.2-rc.3'].includes(version), 'Expected an exact supported rc.2 or rc.3 provider')
+assert.ok(['0.2.2-rc.2', '0.2.2-rc.3', '0.2.2-rc.5'].includes(version), 'Expected an exact supported rc.2, rc.3 or rc.5 provider')
 const upstreamRequire = createRequire(join(official, 'package.json'))
 const { Context } = await import(pathToFileURL(upstreamRequire.resolve('@deepseek-ai/cordis')).href)
 const validationRoot = resolve(process.env.DSH_BALANCE_TEST_OUTPUT ?? tmpdir())

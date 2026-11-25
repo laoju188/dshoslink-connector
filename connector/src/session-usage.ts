@@ -5,7 +5,7 @@ import type {
 } from './pairing-backend.js'
 import type { SessionListAuthorizer } from './session-list.js'
 import { projectCatalog, type SessionModelRpcRequest } from './session-model.js'
-import { projectBalance, type SessionBalance } from './session-balance.js'
+import { displayBalance, projectBalance, type SessionBalance } from './session-balance.js'
 
 export const SESSION_USAGE_PATH = '/dshos/v1/session-usage'
 export const MAX_SESSION_USAGE_REQUEST_BYTES = 4 * 1_024
@@ -38,20 +38,6 @@ interface SessionTokenUsage {
 
 function emptyResponse(status: number): PairingV1HttpResponse {
   return { status, body: '' }
-}
-
-/** Display cents only; keep upstream money and accounting calculations unchanged. */
-function displayBalance(balance: SessionBalance): SessionBalance {
-  if (balance.status !== 'available') return balance
-  const negative = balance.totalBalance.startsWith('-')
-  const [whole, fraction = ''] = (negative ? balance.totalBalance.slice(1) : balance.totalBalance).split('.')
-  let cents = BigInt(whole!) * 100n + BigInt(fraction.padEnd(2, '0').slice(0, 2))
-  if ((fraction[2] ?? '0') >= '5') cents++
-  const digits = cents.toString().padStart(3, '0')
-  // The unchanged phone contract accepts at most 16 integer digits.
-  if (digits.length > 18) return { status: 'query_failed' }
-  const totalBalance = (negative && cents !== 0n ? '-' : '') + digits.slice(0, -2) + '.' + digits.slice(-2)
-  return { status: 'available', currency: balance.currency, totalBalance }
 }
 
 function isObject(value: unknown): value is Record<string, unknown> {

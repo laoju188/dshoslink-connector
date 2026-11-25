@@ -1,4 +1,4 @@
-import { projectBalance, type SessionBalance } from './session-balance.js'
+import { displayBalance, projectBalance, type SessionBalance } from './session-balance.js'
 import { symbols, type Context } from '@deepseek-ai/cordis'
 
 declare module '@deepseek-ai/cordis' {
@@ -18,7 +18,7 @@ function object(value: unknown): value is Record<string, unknown> {
 }
 
 /** Normalize the official decimal-string format without rounding money through Number. */
-function amount(value: unknown): string | undefined {
+function amount(value: unknown, maxDecimals: number): string | undefined {
   if (typeof value !== 'string' || value.length > 128) return undefined
   const match = /^(-?)(?:(\d+)(?:\.(\d*))?|\.(\d+))(?:e([+-]?\d{1,3}))?$/i.exec(value)
   if (match === null) return undefined
@@ -28,25 +28,29 @@ function amount(value: unknown): string | undefined {
   if (Math.abs(point) > 128) return undefined
   const integer = (point <= 0 ? '0' : digits.slice(0, point).padEnd(point, '0')).replace(/^0+(?=\d)/, '')
   const fraction = (point <= 0 ? '0'.repeat(-point) + digits : digits.slice(point)).replace(/0+$/, '')
-  if (integer.length > 16 || fraction.length > 8) return undefined
+  if (integer.length > 16 || fraction.length > maxDecimals) return undefined
   return (match[1] && (integer !== '0' || fraction !== '') ? '-' : '') + integer + (fraction ? '.' + fraction : '')
 }
 
 /** Exact same-currency addition, matching the API's total available balance. */
 function addAmounts(left: string, right: string): string | undefined {
+  const precision = Math.max(left.split('.')[1]?.length ?? 0, right.split('.')[1]?.length ?? 0)
   const units = (value: string): bigint => {
     const negative = value.startsWith('-')
     const [integer, fraction = ''] = (negative ? value.slice(1) : value).split('.')
-    const result = BigInt(integer! + fraction.padEnd(8, '0'))
+    const result = BigInt(integer! + fraction.padEnd(precision, '0'))
     return negative ? -result : result
   }
   const total = units(left) + units(right)
-  const digits = (total < 0n ? -total : total).toString().padStart(9, '0')
-  return amount((total < 0n ? '-' : '') + digits.slice(0, -8) + '.' + digits.slice(-8))
+  const digits = (total < 0n ? -total : total).toString().padStart(precision + 1, '0')
+  const integer = digits.slice(0, digits.length - precision)
+  if (integer.length > 16) return undefined
+  const fraction = digits.slice(integer.length).replace(/0+$/, '')
+  return (total < 0n ? '-' : '') + integer + (fraction ? '.' + fraction : '')
 }
 
 /** Sum current recharge and bonus wallets per currency; never convert or mix currencies. */
-export function projectAccountBalance(value: unknown): SessionBalance {
+export function projectAccountBalance(value: unknown, rc5Desktop = false): SessionBalance {
   if (value === null) return { status: 'not_configured' }
   if (!object(value) || value.status !== 'ready') return FAILED
   const rows: Array<{ currency: 'CNY' | 'USD'; totalBalance: string }> = []
@@ -56,7 +60,7 @@ export function projectAccountBalance(value: unknown): SessionBalance {
     for (const row of wallets) {
       if (!object(row) || (row.currency !== 'CNY' && row.currency !== 'USD') || seen.has(row.currency)) return FAILED
       seen.add(row.currency)
-      const balance = amount(row.balance)
+      const balance = amount(row.balance, rc5Desktop ? 128 : 8)
       if (balance === undefined) return FAILED
       const existing = rows.find(item => item.currency === row.currency)
       const totalBalance = existing ? addAmounts(existing.totalBalance, balance) : balance
@@ -67,7 +71,8 @@ export function projectAccountBalance(value: unknown): SessionBalance {
   }
   if (rows.length === 0) return FAILED
   const row = rows.find(item => item.currency === 'CNY') ?? rows[0]!
-  return { status: 'available', ...row }
+  const available = { status: 'available' as const, ...row }
+  return rc5Desktop ? displayBalance(available, true) : available
 }
 
 interface Flight {
@@ -87,6 +92,7 @@ export function createSessionBalanceReader(dependencies: {
   service(provider: Provider): unknown
   client(): { version: string; locale: string; timezoneOffsetSeconds: number }
   timeoutMs?: number
+  rc5Desktop?: boolean
 }) {
   let disposed = false
   const states = new Map<Provider, State>()
@@ -147,7 +153,7 @@ export function createSessionBalanceReader(dependencies: {
             ? await (service.getBalance as (client: ReturnType<typeof dependencies.client>) => Promise<unknown>).call(service, dependencies.client())
             : await (service.read as () => Promise<unknown>).call(service)
           if (stop.signal.aborted || disposed || sync(provider).revision !== revision) return FAILED
-          return provider === 'deepseek-account' ? projectAccountBalance(value) : projectBalance(value)
+          return provider === 'deepseek-account' ? projectAccountBalance(value, dependencies.rc5Desktop) : projectBalance(value)
         } catch { return FAILED }
       }).finally(() => {
         if (state.flight === flight) state.flight = undefined
@@ -163,8 +169,9 @@ export function createSessionBalanceReader(dependencies: {
   }
 }
 
-export function registerSessionBalanceReader(ctx: Context, version: string) {
+export function registerSessionBalanceReader(ctx: Context, version: string, hostKind: 'desktop' | 'web' | 'unknown' = 'unknown') {
   const reader = createSessionBalanceReader({
+    rc5Desktop: hostKind === 'desktop' && version === '0.2.2-rc.5',
     service: provider => ctx.get(provider === 'deepseek-account' ? 'deepseekAccount' : 'deepseekBalance'),
     client: () => ({ version, locale: Intl.DateTimeFormat().resolvedOptions().locale,
       timezoneOffsetSeconds: -new Date().getTimezoneOffset() * 60 }),

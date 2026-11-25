@@ -16,6 +16,7 @@ param(
   [string]$Dsh022Rc1ProviderPackageDirectory = '',
   [string]$Dsh022Rc2ProviderPackageDirectory = '',
   [string]$Dsh022Rc3ProviderPackageDirectory = '',
+  [string]$Dsh022Rc5ProviderPackageDirectory = '',
   [switch]$SkipTests
 )
 
@@ -39,8 +40,8 @@ $archive = Join-Path $OutputRoot ($releaseName + '.zip')
 if ((Test-Path -LiteralPath $stage) -or (Test-Path -LiteralPath $archive)) {
   throw "Release output already exists: $releaseName"
 }
-if ($DshProviderPackageDirectory.Length -eq 0 -or $Dsh015ProviderPackageDirectory.Length -eq 0 -or $Dsh016ProviderPackageDirectory.Length -eq 0 -or $Dsh017ProviderPackageDirectory.Length -eq 0 -or $Dsh017Rc2ProviderPackageDirectory.Length -eq 0 -or $Dsh020Rc1ProviderPackageDirectory.Length -eq 0 -or $Dsh020Rc2ProviderPackageDirectory.Length -eq 0 -or $Dsh021Rc2ProviderPackageDirectory.Length -eq 0 -or $Dsh021Rc3ProviderPackageDirectory.Length -eq 0 -or $Dsh021Rc5ProviderPackageDirectory.Length -eq 0 -or $Dsh022Rc1ProviderPackageDirectory.Length -eq 0 -or $Dsh022Rc2ProviderPackageDirectory.Length -eq 0 -or $Dsh022Rc3ProviderPackageDirectory.Length -eq 0) {
-  throw 'Provide the pinned official DSH provider directory for every supported version, including 0.2.2-rc.3.'
+if ($DshProviderPackageDirectory.Length -eq 0 -or $Dsh015ProviderPackageDirectory.Length -eq 0 -or $Dsh016ProviderPackageDirectory.Length -eq 0 -or $Dsh017ProviderPackageDirectory.Length -eq 0 -or $Dsh017Rc2ProviderPackageDirectory.Length -eq 0 -or $Dsh020Rc1ProviderPackageDirectory.Length -eq 0 -or $Dsh020Rc2ProviderPackageDirectory.Length -eq 0 -or $Dsh021Rc2ProviderPackageDirectory.Length -eq 0 -or $Dsh021Rc3ProviderPackageDirectory.Length -eq 0 -or $Dsh021Rc5ProviderPackageDirectory.Length -eq 0 -or $Dsh022Rc1ProviderPackageDirectory.Length -eq 0 -or $Dsh022Rc2ProviderPackageDirectory.Length -eq 0 -or $Dsh022Rc3ProviderPackageDirectory.Length -eq 0 -or $Dsh022Rc5ProviderPackageDirectory.Length -eq 0) {
+  throw 'Provide the pinned official DSH provider directory for every supported version, including 0.2.2-rc.5.'
 }
 $DshProviderPackageDirectory = [System.IO.Path]::GetFullPath($DshProviderPackageDirectory)
 $Dsh015ProviderPackageDirectory = [System.IO.Path]::GetFullPath($Dsh015ProviderPackageDirectory)
@@ -56,6 +57,7 @@ $Dsh021Rc5ProviderPackageDirectory = [System.IO.Path]::GetFullPath($Dsh021Rc5Pro
 $Dsh022Rc1ProviderPackageDirectory = [System.IO.Path]::GetFullPath($Dsh022Rc1ProviderPackageDirectory)
 $Dsh022Rc2ProviderPackageDirectory = [System.IO.Path]::GetFullPath($Dsh022Rc2ProviderPackageDirectory)
 $Dsh022Rc3ProviderPackageDirectory = [System.IO.Path]::GetFullPath($Dsh022Rc3ProviderPackageDirectory)
+$Dsh022Rc5ProviderPackageDirectory = [System.IO.Path]::GetFullPath($Dsh022Rc5ProviderPackageDirectory)
 
 New-Item -ItemType Directory -Path $stage -Force | Out-Null
 
@@ -99,7 +101,8 @@ try {
     @{ path = $Dsh021Rc5ProviderPackageDirectory; name = 'dshos-link-deepseek-provider-021rc5.tgz'; version = '0.2.1-rc.5' },
     @{ path = $Dsh022Rc1ProviderPackageDirectory; name = 'dshos-link-deepseek-provider-022rc1.tgz'; version = '0.2.2-rc.1' },
     @{ path = $Dsh022Rc2ProviderPackageDirectory; name = 'dshos-link-deepseek-provider-022rc2.tgz'; version = '0.2.2-rc.2' },
-    @{ path = $Dsh022Rc3ProviderPackageDirectory; name = 'dshos-link-deepseek-provider-022rc3.tgz'; version = '0.2.2-rc.3' }
+    @{ path = $Dsh022Rc3ProviderPackageDirectory; name = 'dshos-link-deepseek-provider-022rc3.tgz'; version = '0.2.2-rc.3' },
+    @{ path = $Dsh022Rc5ProviderPackageDirectory; name = 'dshos-link-deepseek-provider-022rc5.tgz'; version = '0.2.2-rc.5' }
   )) {
     $providerManifest = Get-Content (Join-Path $provider.path 'package.json') -Raw | ConvertFrom-Json
     if ($providerManifest.version -cne $provider.version) { throw 'Provider directory/version mapping mismatch.' }
@@ -119,7 +122,7 @@ try {
     }
   }
   $sources = [ordered]@{}
-  foreach ($name in @('balance-api.ts', 'build.mjs', 'baseline.json', 'baseline-0.1.5.json', 'baseline-0.1.6.json', 'baseline-0.1.7.json', 'baseline-0.1.7-rc.2.json', 'baseline-0.2.0-rc.1.json', 'baseline-0.2.0-rc.2.json', 'baseline-0.2.1-rc.2.json', 'baseline-0.2.1-rc.3.json', 'baseline-0.2.1-rc.5.json', 'baseline-0.2.2-rc.1.json', 'baseline-0.2.2-rc.2.json', 'baseline-0.2.2-rc.3.json', 'balance-provider.mjs', 'LICENSE')) {
+  foreach ($name in @('balance-api.ts', 'build.mjs', 'baseline.json', 'baseline-0.1.5.json', 'baseline-0.1.6.json', 'baseline-0.1.7.json', 'baseline-0.1.7-rc.2.json', 'baseline-0.2.0-rc.1.json', 'baseline-0.2.0-rc.2.json', 'baseline-0.2.1-rc.2.json', 'baseline-0.2.1-rc.3.json', 'baseline-0.2.1-rc.5.json', 'baseline-0.2.2-rc.1.json', 'baseline-0.2.2-rc.2.json', 'baseline-0.2.2-rc.3.json', 'baseline-0.2.2-rc.5.json', 'balance-provider.mjs', 'LICENSE')) {
     $sources[$name] = (Get-ReleaseFileSha256 (Join-Path $connectorRoot "..\patches\dsh-deepseek-balance\$name")).ToLowerInvariant()
   }
   $stamp = [ordered]@{ payloads = $payloads; sources = $sources } | ConvertTo-Json
