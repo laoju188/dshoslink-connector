@@ -2,9 +2,11 @@ import { Service, type Context } from '@deepseek-ai/cordis'
 import { DshEnrollmentRemote } from './dsh-enrollment-remote.js'
 import type { DshEnrollment } from './dsh-enrollment.js'
 import type {
+  PairingAddressState,
   PairingConnectorStatusSnapshot,
   PairingPortControl,
 } from './pairing-port-control.js'
+import type { NetworkDiscoveryDiagnostic } from './pairing-support-contract.js'
 import { PAIRING_REMOTE_NAMESPACE } from './remote.js'
 
 export const PAIRING_UI_PROOF_ENV = 'DSHOS_LINK_PAIRING_UI_PROOF'
@@ -86,6 +88,8 @@ export interface PairingOverlayProofOptions {
   readonly commandEnabled?: boolean
   readonly disposeController?: boolean
   readonly portControl?: PairingPortControl
+  readonly networkDiagnostic?: () => NetworkDiscoveryDiagnostic | undefined
+  readonly networkRefresh?: () => Promise<void>
 }
 
 // Compatibility surface for existing host management; never generates an invitation.
@@ -109,6 +113,10 @@ export class PairingOverlayService extends Service {
     private readonly store: TransientInvitationStore,
     private readonly controller?: PairingOverlayController,
     private readonly portControl?: PairingPortControl,
+    private readonly network?: {
+      readonly diagnostic?: () => NetworkDiscoveryDiagnostic | undefined
+      readonly refresh?: () => Promise<void>
+    },
   ) {
     super(ctx, PAIRING_REMOTE_NAMESPACE)
     this.typertRemote = Object.freeze({
@@ -117,6 +125,9 @@ export class PairingOverlayService extends Service {
       namespace: PAIRING_REMOTE_NAMESPACE,
     })
   }
+
+  private refreshInFlight: Promise<void> | undefined
+  private lastNetworkRefreshAt = 0
 
   snapshot(): PairingOverlaySnapshot | null {
     if (this.controller !== undefined) return this.controller.snapshot()
@@ -165,18 +176,55 @@ export class PairingOverlayService extends Service {
   }
 
   connectorStatus(): PairingConnectorStatusSnapshot | null {
-    return this.portControl?.connectorStatus() ?? null
+    return this.decorateStatus(this.portControl?.connectorStatus() ?? null)
   }
 
   async setRemoteAccess(enabled: boolean): Promise<PairingConnectorStatusSnapshot> {
     if (typeof enabled !== 'boolean') throw Error('remote_access_invalid')
     if (!this.portControl?.setRemoteAccess) throw Error('remote_access_unavailable')
-    return this.portControl.setRemoteAccess(enabled)
+    return this.decorateStatus(await this.portControl.setRemoteAccess(enabled))!
   }
 
   async repairPorts(): Promise<PairingConnectorStatusSnapshot> {
     if (this.portControl === undefined) throw new Error('Pairing port repair is unavailable')
-    return this.portControl.repairPorts()
+    return this.decorateStatus(await this.portControl.repairPorts())!
+  }
+
+  /** Local settings action only: bounded, single-flight LAN re-discovery plus cloud-host refresh. */
+  async refreshNetwork(): Promise<PairingConnectorStatusSnapshot> {
+    if (this.portControl === undefined || this.network?.refresh === undefined) {
+      throw new Error('network_refresh_unavailable')
+    }
+    if (this.refreshInFlight !== undefined) {
+      await this.refreshInFlight
+      return this.requireConnectorStatus()
+    }
+    if (Date.now() - this.lastNetworkRefreshAt >= 10_000) {
+      this.lastNetworkRefreshAt = Date.now()
+      this.refreshInFlight = this.network.refresh().finally(() => {
+        this.refreshInFlight = undefined
+      })
+      await this.refreshInFlight
+    }
+    return this.requireConnectorStatus()
+  }
+
+  private requireConnectorStatus(): PairingConnectorStatusSnapshot {
+    const status = this.connectorStatus()
+    if (status === null) throw new Error('network_refresh_unavailable')
+    return status
+  }
+
+  private decorateStatus(status: PairingConnectorStatusSnapshot | null): PairingConnectorStatusSnapshot | null {
+    if (status === null || status.state !== 'NO_PRIVATE_ADDRESS') return status
+    const addressState = this.addressState()
+    return addressState === undefined ? status : Object.freeze({ ...status, addressState })
+  }
+
+  private addressState(): PairingAddressState | undefined {
+    const result = this.network?.diagnostic?.()?.result
+    if (result === 'no_private_address' || result === 'query_failed' || result === 'timeout') return result
+    return result === undefined ? undefined : 'unknown'
   }
 }
 
@@ -200,7 +248,11 @@ export function registerPairingOverlayProof(
   options: PairingOverlayProofOptions = {},
 ): TransientInvitationStore {
   const store = options.controller?.invitationStore ?? new TransientInvitationStore()
-  const pairing = new PairingOverlayService(ctx, store, options.controller, options.portControl)
+  const pairing = new PairingOverlayService(ctx, store, options.controller, options.portControl,
+    options.networkDiagnostic === undefined && options.networkRefresh === undefined ? undefined : {
+      diagnostic: options.networkDiagnostic,
+      refresh: options.networkRefresh,
+    })
   new DshEnrollmentRemote(ctx, options.enrollment ?? (() => undefined), pairing )
   if (options.controller === undefined || options.disposeController !== false) {
     ctx.effect(() => () => {

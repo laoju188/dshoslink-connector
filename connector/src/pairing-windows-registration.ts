@@ -746,6 +746,12 @@ export async function registerWindowsPairingRuntime(
       portControl: controller,
       commandEnabled: false,
       disposeController: false,
+      networkDiagnostic: () => desktopNetworkDiscoveryDiagnostic(),
+      networkRefresh: async () => {
+        const changed = await controller.refreshLanAddresses()
+        if (changed) cloudHost.refreshConnection()
+        else cloudHost.resumeRetained()
+      },
     })
     await registerPairingCodeCommands(ctx)
     for (const apiService of ['apiProxy', 'dshosNativeApi']) {

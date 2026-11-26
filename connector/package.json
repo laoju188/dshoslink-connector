@@ -1,6 +1,6 @@
 {
   "name": "@dshos-link/connector",
-  "version": "0.2.19",
+  "version": "0.2.20",
   "description": "DSHOS Link connector for the official DeepSeek Harness on Windows.",
   "type": "module",
   "bin": {

@@ -1,4 +1,6 @@
 import {emptyEntry,observeEntryEvent,type EntryEvent,type EntryBlockReason} from '../pairing-entry-observation.js'
+import {pairingEntryAllowed,pairingEntryGuidance} from './pairing-entry-guidance.js'
+import type {PairingAddressState} from '../pairing-port-control.js'
 import {useEffect,useRef,useState} from 'react'
 import type {CloudPairingView,CloudPairingEntryReceipt} from '../cloud-pairing-host.js'
 
@@ -11,14 +13,14 @@ export interface CloudPairingRemoteClient {
   suspend(viewId:number):Promise<{suspended:true}>
 }
 /** Keeps code entry local to this mounted panel; never persists it in browser storage. */
-export function CloudPairingPanel({remote,blockedReason='none',blockedMessage='',paired=false,clearInput=false,onCheck}:
-  {remote:CloudPairingRemoteClient;blockedReason?:EntryBlockReason;blockedMessage?:string;paired?:boolean;clearInput?:boolean;onCheck?:()=>void}):JSX.Element{
+export function CloudPairingPanel({remote,blockedReason='none',blockedMessage='',paired=false,clearInput=false,addressState,onCheck,onRefreshNetwork}:
+  {remote:CloudPairingRemoteClient;blockedReason?:EntryBlockReason;blockedMessage?:string;paired?:boolean;clearInput?:boolean;addressState?:PairingAddressState;onCheck?:()=>void;onRefreshNetwork?:()=>Promise<void>}):JSX.Element{
   const [view,setView]=useState<CloudPairingView|null>(null),[code,setCode]=useState(''),[busy,setBusy]=useState(false)
-  const [error,setError]=useState('')
+  const [error,setError]=useState(''),[retrying,setRetrying]=useState(false)
   const validCode=code.length<=24&&/^[0-9０-９]{8}$/.test(code.replace(/[ -]/g,''))
   const generation=useRef(0),pending=useRef<object|null>(null),current=useRef<CloudPairingView|null>(null)
   const readIdle=useRef<Promise<void>|null>(null),action=useRef<object|null>(null)
-  const viewId=useRef(0),input=useRef<HTMLInputElement|null>(null),recheck=useRef<()=>void>(()=>{})
+  const viewId=useRef(0),input=useRef<HTMLInputElement|null>(null),hint=useRef<HTMLParagraphElement|null>(null),recheck=useRef<()=>void>(()=>{})
   const gate=useRef({blockedReason,paired,clearInput});gate.current={blockedReason,paired,clearInput}
   const inputRevision=useRef(0),entryCycle=useRef(0),entryFacts=useRef(emptyEntry()),submitted=useRef(false)
   const receiptQueue=useRef(Promise.resolve()),receipts=useRef(new Set<string>())
@@ -104,21 +106,32 @@ export function CloudPairingPanel({remote,blockedReason='none',blockedMessage=''
       if(epoch===generation.current&&lease===viewId.current&&!document.hidden){apply(value);setError('')}
     },'结果暂未确认，原请求已保留。请稍候。')
   }
-  const entryAllowed=!paired&&!clearInput&&blockedReason==='none'&&!error&&view?.canEnter===true
+  const canEnter=view?.canEnter===true
+  const entryGate={paired,clearInput,blockedReason,error,canEnter}
+  const entryAllowed=pairingEntryAllowed(entryGate)
+  const guidance=pairingEntryGuidance({...entryGate,addressState})
+  const fallbackCheck=guidance.action==='refresh_network'&&onRefreshNetwork===undefined
+  const entryAction=fallbackCheck?'check':guidance.action
+  const hintText=entryAllowed?'':(fallbackCheck?guidance.hint.replace('重新检测网络','重新检查'):guidance.hint)
+  const hintId='dshos-pairing-entry-hint'
+  const retryNetwork=async()=>{if(onRefreshNetwork===undefined||retrying||busy)return;setRetrying(true);try{await onRefreshNetwork()}catch{/* state read will surface */}finally{setRetrying(false)}}
   const entryVisible=!paired&&(!view||view.canEnter||['loading','disabled','ready'].includes(view.phase)||view.phase==='problem'&&!view.canCancel)
   return <section aria-label="手机配对码" style={{padding:20,border:'1px solid var(--dsw-alias-border-l2, #444)',borderRadius:12}}>
     <h3 style={{margin:'0 0 12px'}}>连接手机</h3>
     <p role="status">{blockedMessage||error||(busy?'正在提交配对操作，请保持 DSH 和手机配对页面打开。':paired&&(!view||['ready','loading','disabled'].includes(view.phase))?'原有配对资料已保留，请在手机查看连接情况。':view?.message)||'正在准备电脑配对，请稍候。配对码输入位置就在下方。'}</p>
+    {entryVisible&&hintText?<p id={hintId} ref={hint} tabIndex={-1} aria-live="polite" style={{margin:'0 0 8px',padding:'8px 10px',border:'1px solid var(--dsw-alias-border-l2, #444)',borderRadius:8,background:'var(--dsw-alias-bg-layer-2, #1b1b1b)',color:'inherit',fontSize:13}}>{hintText}</p>:null}
     {entryVisible?<p>在手机打开“配对 DSH”，将手机显示的 8 位配对码输入下方。配对码不会自动传到电脑剪贴板。</p>:null}
     {entryVisible?<form onSubmit={event=>{event.preventDefault();if(validCode&&entryAllowed){note('click');const entry={cycle:entryCycle.current,observation:{...entryFacts.current}};void run('claim',lease=>remote.claim(lease,code,entry))}}}>
-      <label>手机上的配对码
+      <label onClick={()=>{if(!entryAllowed)hint.current?.focus?.()}}>手机上的配对码
         <input ref={input} value={code} inputMode="numeric" autoComplete="off" maxLength={24} aria-label="手机上的 8 位配对码"
-          placeholder="输入手机上的 8 位配对码" disabled={busy||!entryAllowed} onChange={event=>{if(!entryAllowed)return;if(submitted.current)nextEntry();const value=event.target.value;setCode(value);note('visible');note('input');if(value.length<=24&&/^[0-9０-９]{8}$/.test(value.replace(/[ -]/g,'')))note('valid')}}
-          style={{display:'block',width:'100%',boxSizing:'border-box',padding:12,fontSize:24,margin:'8px 0 12px',color:'inherit',background:'var(--dsw-alias-bg-layer-1, #111)',border:'1px solid #777',borderRadius:8}}/>
+          aria-describedby={hintText?hintId:undefined}
+          placeholder={entryAllowed?'输入手机上的 8 位配对码':'暂不可输入，请查看上方说明'} disabled={busy||!entryAllowed} onChange={event=>{if(!entryAllowed)return;if(submitted.current)nextEntry();const value=event.target.value;setCode(value);note('visible');note('input');if(value.length<=24&&/^[0-9０-９]{8}$/.test(value.replace(/[ -]/g,'')))note('valid')}}
+          style={{display:'block',width:'100%',boxSizing:'border-box',padding:12,fontSize:24,margin:'8px 0 12px',color:'inherit',background:'var(--dsw-alias-bg-layer-1, #111)',border:entryAllowed?'1px solid #777':'1px dashed #666',borderRadius:8,opacity:entryAllowed?1:0.55,cursor:entryAllowed?'text':'not-allowed'}}/>
       </label>
       <button type="submit" disabled={busy||!validCode||!entryAllowed}>{busy?'正在连接…':'连接手机'}</button>
     </form>:null}
-    <button type="button" disabled={busy} onClick={()=>{onCheck?.();recheck.current()}}>重新检查</button>
+    {entryAction==='refresh_network'?<button type="button" disabled={busy||retrying} onClick={()=>{void retryNetwork()}}>{retrying?'正在检测…':'重新检测网络'}</button>
+      :<button type="button" disabled={busy} onClick={()=>{onCheck?.();recheck.current()}}>重新检查</button>}
     {view?.canCancel?<button type="button" disabled={busy} onClick={()=>{void run('cancel',lease=>remote.cancel(lease))}}>取消本次配对</button>:null}
   </section>
 }

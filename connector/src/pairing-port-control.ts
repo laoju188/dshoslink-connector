@@ -73,12 +73,16 @@ export type PairingConnectorFailureStage =
   | 'REGISTRATION'
   | 'UNKNOWN'
 
+export type PairingAddressState = 'no_private_address' | 'query_failed' | 'timeout' | 'unknown'
+
 export interface PairingConnectorStatusSnapshot {
   readonly state: PairingConnectorState
   readonly port: number
   readonly bootstrapPort: number
   readonly failureStage: PairingConnectorFailureStage
   readonly repairAvailable: boolean
+  /** Optional, bounded local-network reason shown only in the local DSH settings UI. */
+  readonly addressState?: PairingAddressState
 }
 
 export interface PairingPortControl {

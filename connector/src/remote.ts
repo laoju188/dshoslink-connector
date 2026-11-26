@@ -76,6 +76,12 @@ const connectorStatusSchema = z.readonly(z.strictObject({
     z.literal('REGISTRATION'),
   ]),
   repairAvailable: z.boolean(),
+  addressState: z.optional(z.union([
+    z.literal('no_private_address'),
+    z.literal('query_failed'),
+    z.literal('timeout'),
+    z.literal('unknown'),
+  ])),
 }))
 const connectorStatusResultSchema = z.union([z.null(), connectorStatusSchema])
 
@@ -114,6 +120,20 @@ export const PAIRING_REMOTE_DESCRIPTORS = [
       typeSymbol: '@dshos-link/connector#dshosPairing/connectorStatus:result',
       schema: connectorStatusResultSchema,
       create: () => connectorStatusResultSchema,
+    },
+  },
+  {
+    id: '@dshos-link/connector#dshosPairing/refreshNetwork',
+    service: PAIRING_REMOTE_NAMESPACE,
+    namespace: PAIRING_REMOTE_NAMESPACE,
+    method: 'refreshNetwork',
+    invocation: { kind: 'direct' },
+    parameters: [],
+    result: {
+      mode: 'strict',
+      typeSymbol: '@dshos-link/connector#dshosPairing/refreshNetwork:result',
+      schema: connectorStatusSchema,
+      create: () => connectorStatusSchema,
     },
   },
   {

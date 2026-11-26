@@ -61,6 +61,7 @@ interface PairingConnectorStatusSnapshot {
     | 'REGISTRATION'
     | 'UNKNOWN'
   readonly repairAvailable: boolean
+  readonly addressState?: 'no_private_address' | 'query_failed' | 'timeout' | 'unknown'
 }
 
 type ComputerConfirmationResult =
@@ -75,6 +76,7 @@ interface PairingRemoteNamespace {
   snapshot(): Promise<RemoteResult<PairingOverlaySnapshot | null>>
   connectorStatus(): Promise<RemoteResult<PairingConnectorStatusSnapshot | null>>
   repairPorts(): Promise<RemoteResult<PairingConnectorStatusSnapshot>>
+  refreshNetwork?(): Promise<RemoteResult<PairingConnectorStatusSnapshot>>
   setRemoteAccess?(enabled: boolean): Promise<RemoteResult<PairingConnectorStatusSnapshot>>
   regenerate(): Promise<RemoteResult<InvitationSnapshot>>
   close(): Promise<RemoteResult<void>>
@@ -370,6 +372,8 @@ export function PairingSettingsPage({cloudRemote,enrollmentRemote,remote,workspa
   const canRevoke=paired&&flow.state?.enrollment?.legacyManagement===true
   return <div style={styles.settingsStack}>
     {cloudRemote?<CloudPairingPanel remote={cloudRemote} paired={paired} blockedReason={blockedReason} blockedMessage={blockedMessage}
+      addressState={status?.addressState}
+      onRefreshNetwork={remote.refreshNetwork?async()=>{await remote.refreshNetwork!();await flow.recheck(true)}:undefined}
       clearInput={status?.state==='PAUSED'||status?.failureStage==='ACCESS_CONTROL'||status?.failureStage==='IDENTITY'} onCheck={()=>{void flow.recheck()}}/>:
       <p style={styles.copy} role="status">{paired?'原有配对资料已保留。':'电脑配对服务尚未加载完整，暂时不能输入配对码。'}请确认插件已启用；仍未恢复时，可使用安装工具的诊断功能，不要清除配对资料。</p>}
     <PairingSettingsContent remote={managedRemote} workspaceRemote={workspaceRemote} workspaces={workspaces}
