@@ -96,6 +96,10 @@ export class UpgradeRemote extends Service {
 export function apply(ctx) {
   const io = stateAdapter(ctx), coordinator = new UpgradeCoordinator(io);
   new UpgradeRemote(ctx, coordinator);
-  // Reconciliation only reads current version and updates our own journal. It never repeats an install.
-  void coordinator.reconcile().catch(() => {});
+  // Reconciliation is read-only. A second startup-only repair re-installs the
+  // verified previous connector when a recovery-pending journal has no bundle.
+  void (async() => {
+    try { await coordinator.reconcile(); } catch { /* repair below still runs */ }
+    try { await coordinator.repairStartup(); } catch { /* leave the journal for the next read */ }
+  })();
 }

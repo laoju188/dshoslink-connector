@@ -31,6 +31,22 @@ export class UpgradeCoordinator {
     });
     return this.snapshot();
   }
+  /**
+   * Startup-only repair: reconcile is intentionally read-only, but a crash or
+   * fiber reload can leave a recovery-pending journal with no connector bundle
+   * at all. Reinstall the verified previous archive so the settings UI and the
+   * recovery controls remain reachable; never repeat an unknown target write.
+   */
+  async repairStartup() {
+    const job = this.job;
+    if (!job || !job.needsRecovery || !job.previous || !stable(job.previousVersion)) return this.snapshot();
+    if (!['failed', 'interrupted'].includes(job.phase)) return this.snapshot();
+    if (this.pending) return this.snapshot();
+    let state;
+    try { state = await this.io.current(); } catch { return this.snapshot(); }
+    if (state.exists) return this.snapshot();
+    return this.recover();
+  }
   async markUnconfirmedActivation(version, restoring=false, reason='activation-pending') {
     const ownedJob=this.job;
     let state;

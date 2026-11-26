@@ -7,7 +7,10 @@ export class UpgradePreflightError extends Error {
 
 /** Shared by the first bootstrap and the independent installer before each update. */
 export async function assertUpgradePreflight(ctx: Pick<Context, 'get'>, hostVersion: string, recovery = false): Promise<string> {
-  if (!supportsInAppUpgrade(hostVersion) || !ctx.get('hmr')) throw new UpgradePreflightError('host-not-supported')
+  // A failed replacement can unload the connector while the host is rebuilding
+  // plugin fibers. Recovery must still be able to reinstall the cached previous
+  // archive in that window; only a new update needs a live HMR service.
+  if (!supportsInAppUpgrade(hostVersion) || (!recovery && !ctx.get('hmr'))) throw new UpgradePreflightError('host-not-supported')
   const manager = ctx.get('pluginManager') as unknown as Record<string, unknown> | undefined
   if (!manager || ['listBundles', 'listPlugins', 'installBundle', 'removeBundle'].some(name => typeof manager[name] !== 'function')) {
     throw new UpgradePreflightError('host-api-unavailable')

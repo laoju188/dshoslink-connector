@@ -1,6 +1,6 @@
 # Windows 安装与配对
 
-本说明适用于从 npm 安装的 DSHOS Link 连接器 **0.2.20**。先在 Windows 上安装并打开一次官方 DeepSeek Harness 桌面端，再准备 Node.js 22.19 及以上的 22.x 版本，或 Node.js 24 及以上版本。[DSH 桌面端兼容说明](dsh-desktop-compatibility.md)
+本说明适用于从 npm 安装的 DSHOS Link 连接器 **0.2.21**。先在 Windows 上安装并打开一次官方 DeepSeek Harness 桌面端，再准备 Node.js 22.19 及以上的 22.x 版本，或 Node.js 24 及以上版本。[DSH 桌面端兼容说明](dsh-desktop-compatibility.md)
 
 ## 首次安装
 
@@ -33,6 +33,8 @@ npx --yes @dshos-link/connector@latest upgrade
 ```
 
 如果已将 DSH 升到 `0.2.2-rc.5`，连接器仍是旧版，请用上述命令一起更新连接器和对应的余额组件。重新打开 DSH 后，在「插件 → DSHOS Link」确认版本，再从手机打开原会话。原绑定可以继续使用。
+
+0.2.21 修复了页面内更新失败时可能移除连接器、导致「DSHOS Link」设置页空白的问题。若当前是 0.2.20/助手 0.1.6，**不要使用页面内更新**，请完全退出 DSH 后用上面的 `upgrade` 命令更新到 0.2.21；安装后助手为 0.1.7，后续页面内更新才使用修复后的回滚逻辑。
 
 安装期间无需更新 pnpm 等工具。若安装进程意外退出，连接器会先恢复并核对原配置；符合安全恢复条件时会自动重试一次。
 
